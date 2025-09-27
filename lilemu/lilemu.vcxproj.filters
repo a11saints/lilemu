@@ -13,5 +13,69 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\Emulator">
+      <UniqueIdentifier>{27f59dea-c729-4146-9a71-7d69ab7ffac9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Disassembler">
+      <UniqueIdentifier>{318648b4-0553-4aeb-93b3-e7d46df4ebe5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Emulator">
+      <UniqueIdentifier>{cff38185-f906-4e27-889b-8e3397101dd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Disassembler">
+      <UniqueIdentifier>{a4cfcd9e-2942-43b1-aebc-d46874385957}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Helpers">
+      <UniqueIdentifier>{64575b15-555e-4812-b389-088102aa3acb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ApiHandler">
+      <UniqueIdentifier>{6a5f593f-e738-40fc-9436-88d16827d0b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ApiHandler">
+      <UniqueIdentifier>{d2b019b9-1ff6-4417-9516-31b1bbbdf332}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Other">
+      <UniqueIdentifier>{7c2de80f-c969-47d2-b266-5e605a6b5644}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Disassembler.cpp">
+      <Filter>Source Files\Disassembler</Filter>
+    </ClCompile>
+    <ClCompile Include="Emulator.cpp">
+      <Filter>Source Files\Emulator</Filter>
+    </ClCompile>
+    <ClCompile Include="ApiResolver.cpp">
+      <Filter>Source Files\ApiHandler</Filter>
+    </ClCompile>
+    <ClCompile Include="Sample_x64.cpp">
+      <Filter>Source Files\Other</Filter>
+    </ClCompile>
+    <ClCompile Include="Zydis.cpp">
+      <Filter>Source Files\Other</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Emulator.hpp">
+      <Filter>Header Files\Emulator</Filter>
+    </ClInclude>
+    <ClInclude Include="Disassembler.hpp">
+      <Filter>Header Files\Disassembler</Filter>
+    </ClInclude>
+    <ClInclude Include="Format.hpp">
+      <Filter>Header Files\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="IncludeMe.hpp">
+      <Filter>Header Files\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="ApiResolver.hpp">
+      <Filter>Header Files\ApiHandler</Filter>
+    </ClInclude>
+    <ClInclude Include="NtHelper.hpp">
+      <Filter>Header Files\Helpers</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
