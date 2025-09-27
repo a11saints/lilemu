@@ -5,7 +5,13 @@
 #include <unordered_map>
 #include "Emulator.hpp"
 
-extern Emulator* emulator;
+namespace lilemu {
+	namespace core {
+		class Emulator;
+	}
+}
+
+extern lilemu::core::Emulator* emulator_;
 
 namespace callbacks {
 	namespace kernel32 {

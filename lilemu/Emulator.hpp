@@ -2,11 +2,15 @@
 #include <unicorn/unicorn.h>
 #include "IncludeMe.hpp"
 
+namespace lilemu {
+namespace core {
 
 class Emulator {
 public:
 
 	Emulator(uint64_t base,uint64_t size, std::vector<uint8_t> & buffer, uc_arch arch, uc_mode mode);
+	
+	Emulator();
 
 	~Emulator();
 
@@ -63,3 +67,5 @@ private:
 
 };
 
+} // namespace core
+} // namespace lilemu

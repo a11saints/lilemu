@@ -1,5 +1,8 @@
 #include "Disassembler.hpp"
 
+namespace lilemu {
+namespace core {
+
 /**
 * @param   runtime_address_		Address of data to be mapped.
 * @param	data_					Buffer of bytes to be disassembled.
@@ -92,3 +95,5 @@ void Disassembler::zDisassembler() {
 	}
 }
 
+} // namespace core
+} // namespace lilemu

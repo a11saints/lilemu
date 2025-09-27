@@ -1,10 +1,12 @@
 #include "Emulator.hpp"
 
+namespace lilemu {
+namespace core {
+
 constexpr auto executeInstructionMax = 0x40000;
 constexpr auto stackAddress = 0x0;
 constexpr auto stackSize = 1024 * 1024;
 constexpr auto stackInitValue = 0xFF;
-
 
 Emulator::Emulator(uint64_t base, uint64_t size, std::vector<uint8_t>& buffer, uc_arch arch, uc_mode mode) :
 	arch_{ arch },
@@ -13,6 +15,7 @@ Emulator::Emulator(uint64_t base, uint64_t size, std::vector<uint8_t>& buffer, u
 	size_{ size },
 	buffer_{buffer}
 {}
+
 
 Emulator::~Emulator() {
 	uc_close(uc_);
@@ -212,3 +215,6 @@ uc_x86_reg Emulator::reg_table[] = {
 	UC_X86_REG_R14,
 	UC_X86_REG_R15
 };
+
+} // namespace core
+} // namespace lilemu

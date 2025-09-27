@@ -1,6 +1,10 @@
 #pragma once
 #include <Zydis/Zydis.h>
 #include "IncludeMe.hpp"
+
+namespace lilemu {
+namespace core {
+
 /**
  * @param   runtime_address_		Address of data to be mapped.
  * @param	data_					Buffer of bytes to be disassembled.
@@ -38,4 +42,5 @@ private:
 	const ZyanUSize length = 0;;
 };
 
-
+} // namespace core
+} // namespace lilemu
