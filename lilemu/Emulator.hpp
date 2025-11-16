@@ -39,6 +39,8 @@ public:
 
 	void emu_start(uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
 
+	uint64_t get_arg(int pos);
+
 private:
 
 	uc_arch arch_;

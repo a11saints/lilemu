@@ -137,6 +137,16 @@ void Emulator::emu_start(uint64_t begin, uint64_t until, uint64_t timeout, size_
 	}
 }
 
+uint64_t Emulator::get_arg(int pos) {
+	switch (pos) {
+	case 0 :
+		break;
+	}
+
+	//reg_read
+	return 0;
+}
+
 void Emulator::init_stack() {
 	stackBuffer = (uint64_t*)malloc(stackSize);
 	if (stackBuffer == nullptr) {
