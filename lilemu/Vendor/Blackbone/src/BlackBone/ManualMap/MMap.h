@@ -4,7 +4,7 @@
 #include "../Include/Winheaders.h"
 #include "../Include/Macro.h"
 #include "../PE/PEImage.h"
-
+#include "../Process/Process.h"
 #include "../Process/MemBlock.h"
 #include "../ManualMap/Native/NtLoader.h"
 #include "MExcept.h"

@@ -10,36 +10,36 @@ public:
 
 	~Emulator();
 
-	void init_uc();
+	void InitUC();
 	
-	void init_stack();
+	void InitStack();
 
-	void init_reg_table();
+	void InitRegisters();
 
-	void init_ctxt();
+	void InitContext();
 
-	void init_data();
+	void InitData();
 
-	void mem_read(uint64_t address, void* buffer, size_t size);
+	void ReadMemory(uint64_t address, void* buffer, size_t size);
 	
-	void mem_write(uint64_t address, void* buffer, size_t size);
+	void WriteMemory(uint64_t address, void* buffer, size_t size);
 
-	void mem_map(uint64_t address, uint64_t size, uint32_t permissions);
+	void MapMemory(uint64_t address, uint64_t size, uint32_t permissions);
 	
 	template <typename T>
-	bool sections_map(std::vector<T>& buffer, uint32_t permissions);
+	bool MapSections(std::vector<T>& buffer, uint32_t permissions);
 
-	void hook_add(uc_hook* hook, int type, void* callback, void* user_data, uint64_t start, uint64_t end);
+	void AddHook(uc_hook* hook, int type, void* callback, void* user_data, uint64_t start, uint64_t end);
 
-	void reg_write(const uc_x86_reg& reg_type, const uintptr_t* reg_val);
+	void WriteRegister(const uc_x86_reg& reg_type, const uintptr_t* reg_val);
 
-	void reg_read(const uc_x86_reg& reg_type, void* reg_val);
+	void ReadRegister(const uc_x86_reg& reg_type, void* reg_val);
 
-	int error_log(uc_err err) ;
+	uint64_t LogError(uc_err err) ;
 
-	void emu_start(uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
+	void StartEmulator(uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
 
-	uint64_t get_arg(int pos);
+	uint64_t GetArg(int pos);
 
 private:
 

@@ -4,9 +4,9 @@
 uint64_t callbacks::crt::ios_base__width() {
 	uint64_t rax;
 	uint64_t rcx;
-	emulator->reg_read(UC_X86_REG_RCX, &rcx);
-	emulator->mem_read(rcx + 0x28, &rax, sizeof(rax));
-	emulator->reg_write(UC_X86_REG_RAX, &rax);
+	emulator->ReadRegister(UC_X86_REG_RCX, &rcx);
+	emulator->ReadMemory(rcx + 0x28, &rax, sizeof(rax));
+	emulator->WriteRegister(UC_X86_REG_RAX, &rax);
 	//__asm {
 	//	mov rax, qword ptr ds : [rcx + 28] 
 	//	ret 

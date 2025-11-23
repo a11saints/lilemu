@@ -5,7 +5,6 @@ constexpr auto stackAddress = 0x0;
 constexpr auto stackSize = 1024 * 1024;
 constexpr auto stackInitValue = 0xFF;
 
-
 Emulator::Emulator(uint64_t base, uint64_t size, std::vector<uint8_t>& buffer, uc_arch arch, uc_mode mode) :
 	arch_{ arch },
 	mode_{ mode },
@@ -18,42 +17,44 @@ Emulator::~Emulator() {
 	uc_close(uc_);
 }
 
-void Emulator::init_uc(){
+void Emulator::InitUC(){
 	uc_err err = uc_open(arch_, mode_, &uc_);
 	if (err != UC_ERR_OK) {
 		throw std::runtime_error("Failed to start");
 	}
 
-	/*mem_map(base_, size_, UC_PROT_ALL);
-	mem_write(base_, buffer_.data(), size_);*/
-	sections_map(buffer_, UC_PROT_ALL);
-	init_stack();
-	init_reg_table();
-	init_ctxt();
-	init_data();
+	/*MapMemory(base_, size_, UC_PROT_ALL);
+	WriteMemory(base_, buffer_.data(), size_);*/
+	MapSections(buffer_, UC_PROT_ALL);
+	InitStack();
+	InitRegisters();
+	InitContext();
+	InitData();
 }
 
-void Emulator::mem_read(uint64_t address, void* buffer, size_t size) {
+void Emulator::ReadMemory(uint64_t address, void* buffer, size_t size) {
 	uc_err err = uc_mem_read(uc_, address, buffer, size);
 	if (err != UC_ERR_OK) {
 		throw std::runtime_error("Failed to read memory");
 	}
 }
 
-void Emulator::hook_add(uc_hook* hook, int type, void* callback, void* user_data, uint64_t start, uint64_t end) {
+void Emulator::AddHook(uc_hook* hook, int type, void* callback, void* user_data, uint64_t start, uint64_t end) {
 	uc_err err = uc_hook_add(uc_, hook, type, callback, user_data, start, end);
 	if (err != UC_ERR_OK) {
-		error_log(err);
+		LogError(err);
 	}
 }
-void Emulator::mem_map(uint64_t address, uint64_t size, uint32_t permissions) {
+
+void Emulator::MapMemory(uint64_t address, uint64_t size, uint32_t permissions) {
 	uc_err err = uc_mem_map(uc_, address, size, permissions);
 	if (err) {
-		error_log(err);
+		LogError(err);
 	}
 }
+
 template <typename T>
-bool Emulator::sections_map(std::vector<T>& buffer, uint32_t permissions) {
+bool Emulator::MapSections(std::vector<T>& buffer, uint32_t permissions) {
 	using u64 = uint64_t;
 	using u32 = uint32_t;
 	using u8 = uint8_t;
@@ -74,7 +75,7 @@ bool Emulator::sections_map(std::vector<T>& buffer, uint32_t permissions) {
 
 		size_to_map = (size_to_map + 0xFFF) & ~0xFFF;
 
-		mem_map(virt_addr, size_to_map, UC_PROT_ALL);
+		MapMemory(virt_addr, size_to_map, UC_PROT_ALL);
 
 
 		if (s.SizeOfRawData > 0) {
@@ -82,7 +83,7 @@ bool Emulator::sections_map(std::vector<T>& buffer, uint32_t permissions) {
 				std::cerr << "Section " << i << " raw data out of bounds\n";
 				return false;
 			}
-			 mem_write( virt_addr, buffer.data() + s.PointerToRawData, s.SizeOfRawData);
+			 WriteMemory( virt_addr, buffer.data() + s.PointerToRawData, s.SizeOfRawData);
 		}
 		spdlog::info("Mapped section {0} at {1:x} size 0x{2:x}", std::string(reinterpret_cast<char*>(s.Name), 8), virt_addr, size_to_map);
 		//std::cout << "[+] Mapped section " << std::string(reinterpret_cast<char*>(s.Name), 8) << " at " << std::hex << virt_addr << " size 0x" << size_to_map << "\n";
@@ -90,27 +91,28 @@ bool Emulator::sections_map(std::vector<T>& buffer, uint32_t permissions) {
 	return true;
 }
 
-void Emulator::mem_write(uint64_t address, void* buffer, size_t size) {
+void Emulator::WriteMemory(uint64_t address, void* buffer, size_t size) {
 	uc_err err = uc_mem_write(uc_, address, buffer, size);
 	if (err) {
-		error_log(err);
+		LogError(err);
 	}
 }
 
-void Emulator::reg_write(const uc_x86_reg&  reg_type, const   uintptr_t* reg_val) {
+void Emulator::WriteRegister(const uc_x86_reg&  reg_type, const   uintptr_t* reg_val) {
 	uc_err err = uc_reg_write(uc_, reg_type, reg_val);
 	if (err) {
-		error_log(err);
-	}
-}
-void Emulator::reg_read(const uc_x86_reg&  reg_type, void* reg_val) {
-	uc_err err = uc_reg_read(uc_, reg_type,  reg_val);
-	if (err) {
-		error_log(err);
+		LogError(err);
 	}
 }
 
-int Emulator::error_log(uc_err err) {
+void Emulator::ReadRegister(const uc_x86_reg&  reg_type, void* reg_val) {
+	uc_err err = uc_reg_read(uc_, reg_type,  reg_val);
+	if (err) {
+		LogError(err);
+	}
+}
+
+uint64_t Emulator::LogError(uc_err err) {
 	if (err) {
 		printf("\nEmulation error: %s", uc_strerror(err));
 		uint64_t fault_addr;
@@ -119,47 +121,48 @@ int Emulator::error_log(uc_err err) {
 	}
 	return 0;
 }
-void Emulator::emu_start(uint64_t begin, uint64_t until, uint64_t timeout, size_t count) {
+
+void Emulator::StartEmulator(uint64_t begin, uint64_t until, uint64_t timeout, size_t count) {
 	uc_err err = uc_context_restore(uc_, uc_ctxt_);
 	if (err!=UC_ERR_OK)
 	{
-		error_log(err);
+		LogError(err);
 	}
 	err = uc_mem_write(uc_, stackAddress, stackBuffer, stackSize);
 	if (err != UC_ERR_OK)
 	{
-		error_log(err);
+		LogError(err);
 	}
 
 	 err = uc_emu_start(uc_, begin, until, timeout, count);
 	if (err) {
-		error_log(err);
+		LogError(err);
 	}
 }
 
-uint64_t Emulator::get_arg(int pos) {
+uint64_t Emulator::GetArg(int pos) {
 	switch (pos) {
 	case 0 :
 		break;
 	}
 
-	//reg_read
+	//ReadRegister
 	return 0;
 }
 
-void Emulator::init_stack() {
+void Emulator::InitStack() {
 	stackBuffer = (uint64_t*)malloc(stackSize);
 	if (stackBuffer == nullptr) {
 		throw std::runtime_error("Failed to malloc");
 	}
 	else {
-		mem_map(stackAddress, stackSize, UC_PROT_ALL);
+		MapMemory(stackAddress, stackSize, UC_PROT_ALL);
 		memset(stackBuffer, 0xFF, stackSize);
-		mem_write(stackAddress, stackBuffer, stackSize);
+		WriteMemory(stackAddress, stackBuffer, stackSize);
 	}
 }
 
-void Emulator::init_reg_table() {
+void Emulator::InitRegisters() {
 	reg_table_state={
 		{UC_X86_REG_RSP, stackAddress + stackSize - sizeof(std::uintptr_t) * 100},
 		{UC_X86_REG_RAX, 0x00000001400019F0},
@@ -180,11 +183,11 @@ void Emulator::init_reg_table() {
 	};
 
 	for (const auto& [reg, regval] : reg_table_state) {
-		reg_write(reg, (uintptr_t*)&regval);
+		WriteRegister(reg, (uintptr_t*)&regval);
 	}
 }
 
-void Emulator::init_ctxt() {
+void Emulator::InitContext() {
 	if (uc_context_alloc(uc_, &uc_ctxt_) != UC_ERR_OK) {
 		throw("Context allocation fail");
 	}
@@ -194,7 +197,7 @@ void Emulator::init_ctxt() {
 	}
 }
 
-void Emulator::init_data() {
+void Emulator::InitData() {
 	uint64_t lock_addr = 0x0000001400055F8-0xC00; // fill actual offset
 	uint64_t mz_header = 0x000000013FFFF400-0xC00; // fill actual offset
 	uint64_t one = 0;
@@ -222,3 +225,4 @@ uc_x86_reg Emulator::reg_table[] = {
 	UC_X86_REG_R14,
 	UC_X86_REG_R15
 };
+

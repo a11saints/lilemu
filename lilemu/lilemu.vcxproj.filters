@@ -37,9 +37,15 @@
     <Filter Include="Source Files\Other">
       <UniqueIdentifier>{7c2de80f-c969-47d2-b266-5e605a6b5644}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\ProcessManager">
+      <UniqueIdentifier>{c9a40ece-7cd4-4e6c-8982-98c7edd3927f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ProcessManager">
+      <UniqueIdentifier>{6361a52d-197c-4101-9c81-635ee35182c5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp">
+    <ClCompile Include="Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Disassembler.cpp">
@@ -56,6 +62,9 @@
     </ClCompile>
     <ClCompile Include="Zydis.cpp">
       <Filter>Source Files\Other</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessManager.cpp">
+      <Filter>Source Files\ProcessManager</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -76,6 +85,9 @@
     </ClInclude>
     <ClInclude Include="NtHelper.hpp">
       <Filter>Header Files\Helpers</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessManager.hpp">
+      <Filter>Header Files\ProcessManager</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
