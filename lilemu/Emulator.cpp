@@ -25,11 +25,13 @@ void Emulator::InitUC(){
 
 	/*MapMemory(base_, size_, UC_PROT_ALL);
 	WriteMemory(base_, buffer_.data(), size_);*/
-	MapSections(buffer_, UC_PROT_ALL);
+	//MapSections(buffer_, UC_PROT_ALL);
+	MapMemory(base_, buffer_.size(), UC_PROT_ALL);
+	WriteMemory(base_, buffer_.data(), buffer_.size());
 	InitStack();
 	InitRegisters();
 	InitContext();
-	InitData();
+	//InitData();
 }
 
 void Emulator::ReadMemory(uint64_t address, void* buffer, size_t size) {
@@ -76,7 +78,7 @@ bool Emulator::MapSections(std::vector<T>& buffer, uint32_t permissions) {
 		size_to_map = (size_to_map + 0xFFF) & ~0xFFF;
 
 		MapMemory(virt_addr, size_to_map, UC_PROT_ALL);
-
+		
 
 		if (s.SizeOfRawData > 0) {
 			if ((s.PointerToRawData + s.SizeOfRawData) > buffer.size()) {
@@ -124,17 +126,16 @@ uint64_t Emulator::LogError(uc_err err) {
 
 void Emulator::StartEmulator(uint64_t begin, uint64_t until, uint64_t timeout, size_t count) {
 	uc_err err = uc_context_restore(uc_, uc_ctxt_);
-	if (err!=UC_ERR_OK)
-	{
-		LogError(err);
-	}
-	err = uc_mem_write(uc_, stackAddress, stackBuffer, stackSize);
-	if (err != UC_ERR_OK)
-	{
+	if (err!=UC_ERR_OK) {
 		LogError(err);
 	}
 
-	 err = uc_emu_start(uc_, begin, until, timeout, count);
+	err = uc_mem_write(uc_, stackAddress, stackBuffer, stackSize);
+	if (err != UC_ERR_OK) {
+		LogError(err);
+	}
+
+	err = uc_emu_start(uc_, begin, until, timeout, count);
 	if (err) {
 		LogError(err);
 	}

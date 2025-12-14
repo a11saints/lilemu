@@ -12,16 +12,16 @@ Disassembler* disassembler;
 Emulator* emulator;
 ZydisDisassembledInstruction* disassembledInstruction = new ZydisDisassembledInstruction;
 
-std::wstring target { L"..\\..\\lilemu\\target\\reveng_Od_vmp_cond_20perc_vm.exe" };
+std::wstring target { L"..\\..\\lilemu\\lilemu\\Target\\reveng_20%vm_antidebug.exe" };
 
 using u64 = uint64_t;
 using u32 = uint32_t;
 using u16 = uint16_t;
 using u8 = uint8_t;
 
-inline constexpr u64 BASE_ADDR = 0x0000000140000000;
-inline constexpr u64 RVA_TEXT = 0x1000;
-inline constexpr u64 RAW_TEXT = 0x400;
+ constexpr u64 BASE_ADDR = 0x0000000140000000;
+constexpr u64 RVA_TEXT = 0x1000;
+constexpr u64 RAW_TEXT = 0x400;
 inline constexpr u64 RVA_DELTA = RVA_TEXT - RAW_TEXT;
 
 /*
@@ -59,7 +59,19 @@ bool  isCall(uint8_t byte[16] ) {
 	return false;
 }
 
+IMAGE_SECTION_HEADER* textSection = new IMAGE_SECTION_HEADER{ sizeof(IMAGE_SECTION_HEADER) };
+void* textSectionPtr = new std::byte{ sizeof(IMAGE_SECTION_HEADER) * 2 };
+
+
 static void mainCallback() {}
+
+bool checkModuleBoundaries(uint64_t address) {
+	IMAGE_SECTION_HEADER* textSection= reinterpret_cast<IMAGE_SECTION_HEADER*>(textSectionPtr);
+	uint64_t textEnd= BASE_ADDR + textSection->VirtualAddress + textSection->SizeOfRawData;
+	uint64_t textStart = BASE_ADDR + textSection->VirtualAddress;
+	return (address < textStart) && (address > textEnd);
+}
+
 
 static void handleCall() {
 	// E8 call
@@ -74,8 +86,12 @@ uint64_t extractCallAddress() {
 
 static void hookCode(uc_engine* uc, uint64_t address, uint32_t size, void* user_data) {
 	//std::cout << "\n " << std::hex << address<<" | ";
-	uint8_t code[16];
-	uc_mem_read(uc, address, code, size);
+	uint8_t code[16]{0};
+
+	uc_err error = uc_mem_read(uc, address, code, size);
+	if (error != UC_ERR_OK) {
+		spdlog::error("Error: ", uc_strerror(error));
+	}
 	std::vector<ZyanU8> bytes(std::begin(code), std::end(code));
 	std::string nigger;
 
@@ -93,8 +109,8 @@ static void hookCode(uc_engine* uc, uint64_t address, uint32_t size, void* user_
 		a = a.substr(6, 18);
 		uint64_t b = 0;
 		b = std::stoull(a, nullptr, 16);
-	/*	bool c = checkModuleBoundaries(b);
-		if (c) spdlog::warn("Call outside of .text section");*/
+		bool c = checkModuleBoundaries(b);
+		if (c) spdlog::warn("Call outside of .text section");
 	}
 	for (int i = 0; i < size; ++i) {
 		if (i != 0) nigger += " ";
@@ -102,7 +118,6 @@ static void hookCode(uc_engine* uc, uint64_t address, uint32_t size, void* user_
 	}
 
 	spdlog::info("{0:x} | {1} | {2}", address, nigger, disassembledInstruction->text);
-
 	//Sleep(50);
 }
 
@@ -114,17 +129,38 @@ void hookMemory(uc_engine* uc, uc_mem_type type, uint64_t addr, int size, int64_
 using namespace blackbone;
 using namespace blackbone::pe;
 
+template <typename T>
+int findOffset(T ptr, std::vector<ZyanU8> pattern) {
+	auto it = std::search(ptr.begin(), ptr.end(), pattern.begin(), pattern.end());
+	
+	if (it != ptr.end()) {
+		return std::distance(ptr.begin(), it);
+	}
+	else {
+		return 0;
+	}
+	return 0;
+}
+
 
 int main() {
 	spdlog::info("Started.");
 	Process process{};
 	std::cout << GetLastError();
-	if (!process.CreateAndAttach(target, true)) {
+	int pid;
+	std::cout << "enter pid: ";
+	//std::cin >> pid;
+	int s = process.Attach(24536);
+	std::cout << GetLastError();
+
+	if (GetLastError()==0) {
 		auto& memory = process.memory();
 		auto& modules = process.modules();
 		auto& procesCore = process.core();
 		auto mainModule = modules.GetMainModule();
 		void* moduleBuffer = new std::byte[mainModule->size]{};
+
+		IMAGE_SECTION_HEADER *text = new IMAGE_SECTION_HEADER{sizeof(IMAGE_SECTION_HEADER)};
 
 		if (!memory.Read(mainModule->baseAddress, mainModule->size, moduleBuffer)) {
 			blackbone::pe::PEImage peImage;
@@ -132,15 +168,58 @@ int main() {
 			std::vector<IMAGE_SECTION_HEADER> vecImageSectionHeaders;
 			for (auto& section : peImage.sections()) {
 				vecImageSectionHeaders.emplace_back(section);
+				if (strcmp((char*)section.Name, ".text")==0) {
+					textSectionPtr = (void*) &section;
+				}
+
 			}
 			uint64_t mainModuleImageBase = peImage.imageBase();
 			uint64_t mainModuleEntryPoint = peImage.entryPoint(mainModuleImageBase);
 			spdlog::info("\nEntry point in emulator: {0:x}", mainModuleEntryPoint);
+			
+	
+
 
 			std::vector<ZyanU8> zcode;
 			zcode.resize(mainModule->size);
+			// std::memcpy(zcode.data(), moduleBuffer, zcode.size());
 
-			memcpy(zcode.data(), moduleBuffer, zcode.size());
+			
+			auto FileOffsetToVA = [&](size_t fileOffset) -> uint64_t {
+				for (const auto& sec : peImage.sections()) {
+					if (fileOffset >= sec.PointerToRawData && fileOffset < sec.PointerToRawData + sec.SizeOfRawData) {
+						uint32_t rva = static_cast<uint32_t>(fileOffset - sec.PointerToRawData + sec.VirtualAddress);
+						return BASE_ADDR + rva; // or mainModule->baseAddress + rva if using actual loaded base
+					}
+				}
+				return BASE_ADDR; // fallback
+				};
+
+			
+			//auto imgSize = peImage.imageSize(); // or peImage.headers().optionalHeader.SizeOfImage
+			//for (const auto& sec : peImage.sections()) {
+			//	if (sec.SizeOfRawData == 0) continue;
+			//	uint64_t destRva = sec.VirtualAddress;
+			//	uint64_t srcOffset = sec.PointerToRawData;
+			//	// bounds check:
+			//	if (srcOffset + sec.SizeOfRawData <= mainModule->size && destRva + sec.SizeOfRawData <= zcode.size()) {
+			//		std::memcpy(zcode.data() + destRva, static_cast<std::byte*>(moduleBuffer) + srcOffset, sec.SizeOfRawData);
+
+			//	}
+			//}
+
+			uint8_t buffer[10]={0};
+			memory.Read(0x0000000140000000, buffer);
+			for (auto i : buffer) {
+				std::cout << i << " ";
+			}
+			memory.Read(mainModule->baseAddress,  zcode.size(), zcode.data());
+			uint64_t entry = findOffset<std::vector<ZyanU8>>(zcode, std::vector<ZyanU8>{ 0x41, 0x52, 0x49, 0xba });
+			spdlog::info("Found pattern at offset: {0:x}", entry);
+			entry += BASE_ADDR;
+
+			
+			
 			
 			/*
 			@note: It raises confusion the fact, that we pass, entrypoint and offset to entrypoint,
@@ -157,8 +236,10 @@ int main() {
 			uc_hook memoryHook;
 			emulator->AddHook(&memoryHook, UC_HOOK_CODE, hookCode, NULL, BASE_ADDR, BASE_ADDR + zcode.size());
 			//emulator->AddHook(&mem_hook, UC_HOOK_INSN, hookMemory, NULL, 0, 1);
+			// -0x750a00
 
-			emulator->StartEmulator(0x0000001400010A0, BASE_ADDR + zcode.size() - (mainModuleEntryPoint - BASE_ADDR), 0, 0);
+
+			emulator->StartEmulator(BASE_ADDR+0x8c786f, BASE_ADDR + zcode.size() /*- (mainModuleEntryPoint - BASE_ADDR)*/, 0, 0);
 			Sleep(50000);
 		}
 	}
